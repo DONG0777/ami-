@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People Search - নির্ভুল অনুসন্ধান</title>
+    <style>
+        body { font-family: sans-serif; max-width: 1200px; margin: auto; padding: 20px; }
+        #searchBox { width: 100%; padding: 12px; font-size: 18px; margin-bottom: 20px; }
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; }
+        .filters select { padding: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .highlight { background-color: yellow; }
+    </style>
+</head>
+<body>
+    <h1>🔍 People ডেটাবেস সার্চ</h1>
+    <input type="text" id="searchBox" placeholder="নাম, ফোন, এলাকা, রোল, ক্লাস্টার বা নোট লিখুন...">
+    <div class="filters">
+        <select id="filterRole"><option value="">সব রোল</option></select>
+        <select id="filterArea"><option value="">সব এলাকা</option></select>
+        <select id="filterCluster"><option value="">সব ক্লাস্টার</option></select>
+    </div>
+    <div id="resultsCount"></div>
+    <table id="resultsTable">
+        <thead>
+            <tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+    <script>
+        let peopleData = [];
+        let fuseInstance = null;
+
+        fetch('people.json')
+            .then(res => res.json())
+            .then(data => {
+                peopleData = data;
+                fuseInstance = new Fuse(peopleData, {
+                    keys: ['name', 'phone', 'area', 'role', 'cluster', 'note'],
+                    threshold: 0.3,  // ফাজি ম্যাচিং - ভুল বানান ধরবে
+                    includeMatches: true
+                });
+                populateFilters(peopleData);
+                performSearch();
+            });
+
+        function populateFilters(data) {
+            const roles = [...new Set(data.map(p => p.role).filter(r => r))];
+            const areas = [...new Set(data.map(p => p.area).filter(a => a))];
+            const clusters = [...new Set(data.map(p => p.cluster).filter(c => c))];
+            const roleSelect = document.getElementById('filterRole');
+            const areaSelect = document.getElementById('filterArea');
+            const clusterSelect = document.getElementById('filterCluster');
+            roles.forEach(r => { let opt = document.createElement('option'); opt.value = r; opt.text = r; roleSelect.appendChild(opt); });
+            areas.forEach(a => { let opt = document.createElement('option'); opt.value = a; opt.text = a; areaSelect.appendChild(opt); });
+            clusters.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.text = c; clusterSelect.appendChild(opt); });
+            document.getElementById('filterRole').addEventListener('change', performSearch);
+            document.getElementById('filterArea').addEventListener('change', performSearch);
+            document.getElementById('filterCluster').addEventListener('change', performSearch);
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchBox').value.trim();
+            let filtered = peopleData;
+            if (query !== "") {
+                const fuseResults = fuseInstance.search(query);
+                filtered = fuseResults.map(r => r.item);
+            }
+            // ফিল্টার অ্যাপ্লাই
+            const role = document.getElementById('filterRole').value;
+            const area = document.getElementById('filterArea').value;
+            const cluster = document.getElementById('filterCluster').value;
+            if (role) filtered = filtered.filter(p => p.role === role);
+            if (area) filtered = filtered.filter(p => p.area === area);
+            if (cluster) filtered = filtered.filter(p => p.cluster === cluster);
+            
+            displayResults(filtered, query);
+        }
+
+        function displayResults(data, query) {
+            const tbody = document.querySelector('#resultsTable tbody');
+            const countDiv = document.getElementById('resultsCount');
+            countDiv.innerHTML = `${data.length} টি ফলাফল পাওয়া গেছে`;
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.id || ''}</td>
+                    <td>${highlightText(row.name || '', query)}</td>
+                    <td>${highlightText(row.phone || '', query)}</td>
+                    <td>${highlightText(row.area || '', query)}</td>
+                    <td>${highlightText(row.role || '', query)}</td>
+                    <td>${highlightText(row.cluster || '', query)}</td>
+                    <td>${highlightText(row.note || '', query)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function highlightText(text, query) {
+            if (!query || query === "") return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, `<span class="highlight">$1</span>`);
+        }
+
+        document.getElementById('searchBox').addEventListener('input', performSearch);
+    </script>
+</body>
+</html>
