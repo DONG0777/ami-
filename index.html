@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>People Manager - যোগ, এডিট, ডিলিট, কল, হোয়াটসঅ্যাপ</title>
+    <title>People Manager - মেনু সংস্করণ</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -20,6 +20,13 @@
             padding: 20px;
             margin-bottom: 25px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        /* ফর্ম কার্ড - ডিফল্ট লুকানো */
+        #formCard {
+            display: none;
+        }
+        #formCard.show {
+            display: block;
         }
         .form-row {
             display: flex;
@@ -61,6 +68,14 @@
         .btn-warning { background-color: #f39c12; }
         .btn-whatsapp { background-color: #25D366; }
         .btn-call { background-color: #2c3e50; }
+        .btn-new {
+            background-color: #2ecc71;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            border: none;
+            cursor: pointer;
+        }
         .search-box {
             width: 100%;
             padding: 12px;
@@ -99,10 +114,43 @@
             position: sticky;
             top: 0;
         }
-        .action-buttons button {
-            margin: 2px;
-            padding: 4px 8px;
-            font-size: 12px;
+        .action-buttons {
+            position: relative;
+            text-align: center;
+        }
+        .kebab-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 8px;
+            color: #2c3e50;
+        }
+        .dropdown-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 100;
+            min-width: 140px;
+            right: 0;
+            top: 100%;
+            display: none;
+        }
+        .dropdown-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            margin: 0;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .dropdown-menu button:hover {
+            background-color: #f0f0f0;
         }
         .highlight {
             background-color: yellow;
@@ -112,6 +160,7 @@
             gap: 10px;
             justify-content: flex-end;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         @media (max-width: 700px) {
             .form-row { flex-direction: column; }
@@ -123,8 +172,11 @@
 <body>
 <h1>📋 People Manager</h1>
 
-<!-- ফর্ম: নতুন সদস্য যোগ / এডিট -->
-<div class="card">
+<!-- বাটন: নতুন সদস্য যোগ -->
+<button id="toggleFormBtn" class="btn-new">➕ নতুন সদস্য যোগ করুন</button>
+
+<!-- ফর্ম কার্ড (লুকানো) -->
+<div id="formCard" class="card">
     <h2 id="formTitle">➕ নতুন সদস্য যোগ করুন</h2>
     <form id="peopleForm">
         <div class="form-row">
@@ -163,7 +215,7 @@
     <div style="overflow-x: auto;">
         <table id="peopleTable">
             <thead>
-                <tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th><th>অ্যাকশন</th></tr>
+                <tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th><th style="width:60px"></th></tr>
             </thead>
             <tbody></tbody>
         </table>
@@ -172,17 +224,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 <script>
-    // ---------- ডিফল্ট ডেটা (আপনার প্রয়োজনমতো সম্পাদনাযোগ্য) ----------
+    // ---------- ডিফল্ট ডেটা ----------
     const DEFAULT_DATA = [
         { id: 1, name: "রহিম মিয়া", phone: "01711111111", area: "ঢাকা", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" },
         { id: 2, name: "করিমা বেগম", phone: "01822222222", area: "চট্টগ্রাম", role: "নেত্রী", cluster: "দক্ষিণ", note: "নতুন যোগদান" }
     ];
 
-    let peopleData = [];      // মূল ডেটা অ্যারে
+    let peopleData = [];
     let fuseInstance = null;
-    let currentEditId = null; // এডিট মোডে আইডি রাখবে
 
-    // ---------- localStorage থেকে ডেটা লোড ----------
+    // ---------- localStorage ----------
     function loadDataFromStorage() {
         const stored = localStorage.getItem('peopleManagerData');
         if (stored) {
@@ -191,7 +242,6 @@
             peopleData = JSON.parse(JSON.stringify(DEFAULT_DATA));
             saveToStorage();
         }
-        // id অনুযায়ী সাজানো
         peopleData.sort((a,b) => a.id - b.id);
         rebuildFuse();
         populateFilters();
@@ -202,7 +252,6 @@
         localStorage.setItem('peopleManagerData', JSON.stringify(peopleData));
     }
 
-    // ---------- Fuse.js ইনিশিয়ালাইজ ----------
     function rebuildFuse() {
         fuseInstance = new Fuse(peopleData, {
             keys: ['name', 'phone', 'area', 'role', 'cluster', 'note'],
@@ -211,7 +260,6 @@
         });
     }
 
-    // ---------- ফিল্টার ড্রপডাউন পূরণ ----------
     function populateFilters() {
         const roles = [...new Set(peopleData.map(p => p.role).filter(r => r && r.trim() !== ""))];
         const areas = [...new Set(peopleData.map(p => p.area).filter(a => a && a.trim() !== ""))];
@@ -219,7 +267,6 @@
         const roleSelect = document.getElementById('filterRole');
         const areaSelect = document.getElementById('filterArea');
         const clusterSelect = document.getElementById('filterCluster');
-        // Clear except first option
         roleSelect.innerHTML = '<option value="">সব রোল</option>';
         areaSelect.innerHTML = '<option value="">সব এলাকা</option>';
         clusterSelect.innerHTML = '<option value="">সব ক্লাস্টার</option>';
@@ -228,7 +275,6 @@
         clusters.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.text = c; clusterSelect.appendChild(opt); });
     }
 
-    // ---------- সার্চ + ফিল্টার রেজাল্ট ----------
     function getFilteredData() {
         const query = document.getElementById('searchBox').value.trim();
         let filtered = peopleData;
@@ -245,7 +291,13 @@
         return filtered;
     }
 
-    // ---------- টেবিল রেন্ডার (অ্যাকশন বাটন সহ) ----------
+    // ড্রপডাউন মেনু বন্ধ করার জন্য গ্লোবাল ক্লিক হ্যান্ডলার
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+
     function renderTable() {
         const filtered = getFilteredData();
         const tbody = document.querySelector('#peopleTable tbody');
@@ -264,36 +316,51 @@
             row.insertCell(6).innerHTML = highlightText(person.note || '', query);
             const actionCell = row.insertCell(7);
             actionCell.className = 'action-buttons';
-            // কল বাটন
-            const callBtn = document.createElement('button');
-            callBtn.textContent = '📞 কল';
-            callBtn.className = 'btn-call';
-            callBtn.onclick = () => window.location.href = `tel:${person.phone}`;
-            // হোয়াটসঅ্যাপ বাটন
-            const waBtn = document.createElement('button');
-            waBtn.textContent = '💬 হোয়াটসঅ্যাপ';
-            waBtn.className = 'btn-whatsapp';
-            waBtn.onclick = () => {
-                let number = person.phone.replace(/\D/g, '');
-                if (!number.startsWith('88')) number = '88' + number;
-                window.open(`https://wa.me/${number}`, '_blank');
+            
+            // তিন বিন্দু বাটন
+            const kebab = document.createElement('button');
+            kebab.textContent = '⋮';
+            kebab.className = 'kebab-btn';
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown-menu';
+            // কল অপশন
+            const callOpt = document.createElement('button');
+            callOpt.textContent = '📞 কল';
+            callOpt.onclick = (e) => { e.stopPropagation(); window.location.href = `tel:${person.phone}`; closeAllDropdowns(); };
+            // হোয়াটসঅ্যাপ
+            const waOpt = document.createElement('button');
+            waOpt.textContent = '💬 হোয়াটসঅ্যাপ';
+            waOpt.onclick = (e) => { e.stopPropagation(); let num = person.phone.replace(/\D/g,''); if(!num.startsWith('88')) num='88'+num; window.open(`https://wa.me/${num}`,'_blank'); closeAllDropdowns(); };
+            // এডিট
+            const editOpt = document.createElement('button');
+            editOpt.textContent = '✏️ এডিট';
+            editOpt.onclick = (e) => { e.stopPropagation(); loadPersonToForm(person); closeAllDropdowns(); };
+            // ডিলিট
+            const delOpt = document.createElement('button');
+            delOpt.textContent = '🗑️ ডিলিট';
+            delOpt.onclick = (e) => { e.stopPropagation(); deletePerson(person.id); closeAllDropdowns(); };
+            dropdown.appendChild(callOpt);
+            dropdown.appendChild(waOpt);
+            dropdown.appendChild(editOpt);
+            dropdown.appendChild(delOpt);
+            actionCell.appendChild(kebab);
+            actionCell.appendChild(dropdown);
+            
+            // টগল ড্রপডাউন
+            kebab.onclick = (e) => {
+                e.stopPropagation();
+                closeAllDropdowns();
+                dropdown.style.display = 'block';
             };
-            // এডিট বাটন
-            const editBtn = document.createElement('button');
-            editBtn.textContent = '✏️ এডিট';
-            editBtn.className = 'btn-warning';
-            editBtn.onclick = () => loadPersonToForm(person);
-            // ডিলিট বাটন
-            const delBtn = document.createElement('button');
-            delBtn.textContent = '🗑️ ডিলিট';
-            delBtn.className = 'btn-danger';
-            delBtn.onclick = () => deletePerson(person.id);
-            actionCell.appendChild(callBtn);
-            actionCell.appendChild(waBtn);
-            actionCell.appendChild(editBtn);
-            actionCell.appendChild(delBtn);
         });
     }
+
+    // ডকুমেন্টে ক্লিক করলে সব ড্রপডাউন বন্ধ
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-menu') && !e.target.closest('.kebab-btn')) {
+            closeAllDropdowns();
+        }
+    });
 
     function highlightText(text, query) {
         if (!query || query === "" || !text) return text || '';
@@ -301,7 +368,18 @@
         return text.replace(regex, `<span class="highlight">$1</span>`);
     }
 
-    // ---------- ফর্ম থেকে নতুন সদস্য যোগ বা আপডেট ----------
+    // ফর্ম টগল
+    function toggleForm(show = null) {
+        const formCard = document.getElementById('formCard');
+        if (show === true) formCard.classList.add('show');
+        else if (show === false) formCard.classList.remove('show');
+        else formCard.classList.toggle('show');
+        if (formCard.classList.contains('show')) {
+            document.getElementById('name').focus();
+        }
+    }
+
+    // সেভ ও এডিট
     function savePerson(event) {
         event.preventDefault();
         const name = document.getElementById('name').value.trim();
@@ -317,12 +395,9 @@
         const editId = document.getElementById('editId').value;
 
         if (editId === "") {
-            // নতুন আইডি তৈরি
             const newId = peopleData.length > 0 ? Math.max(...peopleData.map(p => p.id)) + 1 : 1;
-            const newPerson = { id: newId, name, phone, area, role, cluster, note };
-            peopleData.push(newPerson);
+            peopleData.push({ id: newId, name, phone, area, role, cluster, note });
         } else {
-            // এডিট মোড
             const index = peopleData.findIndex(p => p.id == editId);
             if (index !== -1) {
                 peopleData[index] = { ...peopleData[index], name, phone, area, role, cluster, note };
@@ -334,6 +409,7 @@
         populateFilters();
         renderTable();
         resetFormToAddMode();
+        toggleForm(false); // যোগ/আপডেট শেষে ফর্ম লুকান
     }
 
     function loadPersonToForm(person) {
@@ -347,6 +423,7 @@
         document.getElementById('formTitle').innerHTML = '✏️ সদস্য এডিট করুন';
         document.getElementById('submitBtn').innerHTML = '💾 আপডেট করুন';
         document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        toggleForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -365,11 +442,11 @@
             rebuildFuse();
             populateFilters();
             renderTable();
-            if (currentEditId == id) resetFormToAddMode();
+            if (document.getElementById('editId').value == id) resetFormToAddMode();
         }
     }
 
-    // ---------- ইমপোর্ট / এক্সপোর্ট / রিসেট ----------
+    // ইমপোর্ট/এক্সপোর্ট/রিসেট
     function exportToJSON() {
         const dataStr = JSON.stringify(peopleData, null, 2);
         const blob = new Blob([dataStr], {type: "application/json"});
@@ -388,7 +465,6 @@
                 const imported = JSON.parse(e.target.result);
                 if (Array.isArray(imported)) {
                     peopleData = imported;
-                    // নিশ্চিত করুন প্রতিটি অবজেক্টের id আছে
                     peopleData.forEach((p, idx) => { if (!p.id) p.id = idx+1; });
                     saveToStorage();
                     rebuildFuse();
@@ -411,12 +487,14 @@
             populateFilters();
             renderTable();
             resetFormToAddMode();
+            toggleForm(false);
         }
     }
 
-    // ---------- ইভেন্ট লিসেনার ----------
+    // ইভেন্ট লিসেনার
+    document.getElementById('toggleFormBtn').addEventListener('click', () => toggleForm());
     document.getElementById('peopleForm').addEventListener('submit', savePerson);
-    document.getElementById('cancelEditBtn').addEventListener('click', resetFormToAddMode);
+    document.getElementById('cancelEditBtn').addEventListener('click', () => { resetFormToAddMode(); toggleForm(false); });
     document.getElementById('searchBox').addEventListener('input', () => renderTable());
     document.getElementById('filterRole').addEventListener('change', () => renderTable());
     document.getElementById('filterArea').addEventListener('change', () => renderTable());
@@ -428,7 +506,7 @@
     });
     document.getElementById('resetDataBtn').addEventListener('click', resetToDefault);
 
-    // ---------- শুরু ----------
+    // শুরু
     loadDataFromStorage();
 </script>
 </body>
