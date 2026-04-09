@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>People Manager - মেনু সংস্করণ</title>
+    <title>People Manager - ভারতীয় ফোন ভ্যালিডেশন সহ</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -21,13 +21,8 @@
             margin-bottom: 25px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        /* ফর্ম কার্ড - ডিফল্ট লুকানো */
-        #formCard {
-            display: none;
-        }
-        #formCard.show {
-            display: block;
-        }
+        #formCard { display: none; }
+        #formCard.show { display: block; }
         .form-row {
             display: flex;
             flex-wrap: wrap;
@@ -37,6 +32,7 @@
         .form-group {
             flex: 1;
             min-width: 150px;
+            position: relative;
         }
         label {
             display: block;
@@ -51,6 +47,13 @@
             border-radius: 6px;
             font-size: 14px;
         }
+        .phone-hint {
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+        .phone-hint.valid { color: green; }
+        .phone-hint.invalid { color: red; }
         button {
             background-color: #3498db;
             color: white;
@@ -170,18 +173,20 @@
     </style>
 </head>
 <body>
-<h1>📋 People Manager</h1>
+<h1>📋 People Manager (ভারতীয় ফোন ভ্যালিডেশন)</h1>
 
-<!-- বাটন: নতুন সদস্য যোগ -->
 <button id="toggleFormBtn" class="btn-new">➕ নতুন সদস্য যোগ করুন</button>
 
-<!-- ফর্ম কার্ড (লুকানো) -->
 <div id="formCard" class="card">
     <h2 id="formTitle">➕ নতুন সদস্য যোগ করুন</h2>
     <form id="peopleForm">
         <div class="form-row">
             <div class="form-group"><label>নাম *</label><input type="text" id="name" required></div>
-            <div class="form-group"><label>ফোন *</label><input type="tel" id="phone" required></div>
+            <div class="form-group">
+                <label>ফোন * (ভারতীয় মোবাইল)</label>
+                <input type="tel" id="phone" required>
+                <span id="phoneHint" class="phone-hint"></span>
+            </div>
             <div class="form-group"><label>এলাকা</label><input type="text" id="area"></div>
             <div class="form-group"><label>রোল</label><input type="text" id="role"></div>
             <div class="form-group"><label>ক্লাস্টার</label><input type="text" id="cluster"></div>
@@ -197,7 +202,6 @@
     </form>
 </div>
 
-<!-- সার্চ ও ফিল্টার -->
 <div class="card">
     <input type="text" id="searchBox" class="search-box" placeholder="🔍 যেকোনো কিছু লিখুন (নাম, ফোন, এলাকা, নোট...)" autocomplete="off">
     <div class="filters">
@@ -224,14 +228,64 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 <script>
-    // ---------- ডিফল্ট ডেটা ----------
+    // ---------- ডিফল্ট ডেটা (ভারতীয় নম্বর উদাহরণ) ----------
     const DEFAULT_DATA = [
-        { id: 1, name: "রহিম মিয়া", phone: "01711111111", area: "ঢাকা", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" },
-        { id: 2, name: "করিমা বেগম", phone: "01822222222", area: "চট্টগ্রাম", role: "নেত্রী", cluster: "দক্ষিণ", note: "নতুন যোগদান" }
+        { id: 1, name: "রাহুল শর্মা", phone: "9876543210", area: "দিল্লি", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" },
+        { id: 2, name: "প্রিয়া সিং", phone: "9988776655", area: "মুম্বই", role: "নেত্রী", cluster: "পশ্চিম", note: "নতুন যোগদান" }
     ];
 
     let peopleData = [];
     let fuseInstance = null;
+
+    // ---------- ফোন ভ্যালিডেশন ফাংশন ----------
+    function cleanIndianPhone(phone) {
+        // স্পেস, ড্যাশ, বন্ধনী সরান
+        let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+        // +91 বা 91 প্রিফিক্স থাকলে সরান
+        if (cleaned.startsWith('+91')) cleaned = cleaned.slice(3);
+        else if (cleaned.startsWith('91')) cleaned = cleaned.slice(2);
+        // 0 প্রিফিক্স থাকলে সরান
+        if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+        // শুধু ডিজিট রাখুন
+        cleaned = cleaned.replace(/\D/g, '');
+        return cleaned; // 10 ডিজিট স্ট্রিং
+    }
+
+    function isValidIndianPhone(phone) {
+        const cleaned = cleanIndianPhone(phone);
+        // 10 ডিজিট, প্রথম ডিজিট 6-9 এর মধ্যে
+        return /^[6-9]\d{9}$/.test(cleaned);
+    }
+
+    function isDuplicatePhone(phone, excludeId = null) {
+        const cleaned = cleanIndianPhone(phone);
+        return peopleData.some(p => {
+            if (excludeId && p.id == excludeId) return false;
+            const existingCleaned = cleanIndianPhone(p.phone);
+            return existingCleaned === cleaned;
+        });
+    }
+
+    // ফোন ইনপুটে রিয়েল টাইম হিন্ট দেখানো
+    function validatePhoneField() {
+        const phoneInput = document.getElementById('phone');
+        const hintSpan = document.getElementById('phoneHint');
+        const rawPhone = phoneInput.value;
+        if (!rawPhone) {
+            hintSpan.innerHTML = '';
+            hintSpan.className = 'phone-hint';
+            return false;
+        }
+        const isValid = isValidIndianPhone(rawPhone);
+        if (isValid) {
+            hintSpan.innerHTML = '✓ বৈধ ভারতীয় মোবাইল নম্বর';
+            hintSpan.className = 'phone-hint valid';
+        } else {
+            hintSpan.innerHTML = '✗ ১০ ডিজিটের ভারতীয় মোবাইল নম্বর দিন (6/7/8/9 দিয়ে শুরু)';
+            hintSpan.className = 'phone-hint invalid';
+        }
+        return isValid;
+    }
 
     // ---------- localStorage ----------
     function loadDataFromStorage() {
@@ -291,7 +345,6 @@
         return filtered;
     }
 
-    // ড্রপডাউন মেনু বন্ধ করার জন্য গ্লোবাল ক্লিক হ্যান্ডলার
     function closeAllDropdowns() {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
             menu.style.display = 'none';
@@ -309,6 +362,7 @@
             const row = tbody.insertRow();
             row.insertCell(0).innerText = person.id;
             row.insertCell(1).innerHTML = highlightText(person.name || '', query);
+            // ফোন নম্বর ডিসপ্লে (10 ডিজিটই দেখাবে)
             row.insertCell(2).innerHTML = highlightText(person.phone || '', query);
             row.insertCell(3).innerHTML = highlightText(person.area || '', query);
             row.insertCell(4).innerHTML = highlightText(person.role || '', query);
@@ -317,28 +371,33 @@
             const actionCell = row.insertCell(7);
             actionCell.className = 'action-buttons';
             
-            // তিন বিন্দু বাটন
             const kebab = document.createElement('button');
             kebab.textContent = '⋮';
             kebab.className = 'kebab-btn';
             const dropdown = document.createElement('div');
             dropdown.className = 'dropdown-menu';
-            // কল অপশন
+            
             const callOpt = document.createElement('button');
             callOpt.textContent = '📞 কল';
-            callOpt.onclick = (e) => { e.stopPropagation(); window.location.href = `tel:${person.phone}`; closeAllDropdowns(); };
-            // হোয়াটসঅ্যাপ
+            callOpt.onclick = (e) => { e.stopPropagation(); 
+                let number = cleanIndianPhone(person.phone);
+                window.location.href = `tel:+91${number}`;
+                closeAllDropdowns();
+            };
             const waOpt = document.createElement('button');
             waOpt.textContent = '💬 হোয়াটসঅ্যাপ';
-            waOpt.onclick = (e) => { e.stopPropagation(); let num = person.phone.replace(/\D/g,''); if(!num.startsWith('88')) num='88'+num; window.open(`https://wa.me/${num}`,'_blank'); closeAllDropdowns(); };
-            // এডিট
+            waOpt.onclick = (e) => { e.stopPropagation(); 
+                let number = cleanIndianPhone(person.phone);
+                window.open(`https://wa.me/91${number}`, '_blank');
+                closeAllDropdowns();
+            };
             const editOpt = document.createElement('button');
             editOpt.textContent = '✏️ এডিট';
             editOpt.onclick = (e) => { e.stopPropagation(); loadPersonToForm(person); closeAllDropdowns(); };
-            // ডিলিট
             const delOpt = document.createElement('button');
             delOpt.textContent = '🗑️ ডিলিট';
             delOpt.onclick = (e) => { e.stopPropagation(); deletePerson(person.id); closeAllDropdowns(); };
+            
             dropdown.appendChild(callOpt);
             dropdown.appendChild(waOpt);
             dropdown.appendChild(editOpt);
@@ -346,7 +405,6 @@
             actionCell.appendChild(kebab);
             actionCell.appendChild(dropdown);
             
-            // টগল ড্রপডাউন
             kebab.onclick = (e) => {
                 e.stopPropagation();
                 closeAllDropdowns();
@@ -355,7 +413,6 @@
         });
     }
 
-    // ডকুমেন্টে ক্লিক করলে সব ড্রপডাউন বন্ধ
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.dropdown-menu') && !e.target.closest('.kebab-btn')) {
             closeAllDropdowns();
@@ -368,7 +425,6 @@
         return text.replace(regex, `<span class="highlight">$1</span>`);
     }
 
-    // ফর্ম টগল
     function toggleForm(show = null) {
         const formCard = document.getElementById('formCard');
         if (show === true) formCard.classList.add('show');
@@ -379,28 +435,42 @@
         }
     }
 
-    // সেভ ও এডিট
+    // ফোন ভ্যালিডেশন ও ডুপ্লিকেট চেক সহ সেভ
     function savePerson(event) {
         event.preventDefault();
         const name = document.getElementById('name').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        if (!name || !phone) {
-            alert('নাম এবং ফোন অবশ্যই দিতে হবে');
+        let rawPhone = document.getElementById('phone').value.trim();
+        if (!name) { alert('নাম দিন'); return; }
+        if (!rawPhone) { alert('ফোন নম্বর দিন'); return; }
+        
+        // ফোন ভ্যালিডেশন
+        if (!isValidIndianPhone(rawPhone)) {
+            alert('ভারতীয় মোবাইল নম্বর সঠিক নয়। ১০ ডিজিটের 6/7/8/9 দিয়ে শুরু নম্বর দিন।');
             return;
         }
+        
+        const editId = document.getElementById('editId').value;
+        // ডুপ্লিকেট চেক
+        if (isDuplicatePhone(rawPhone, editId ? parseInt(editId) : null)) {
+            alert('এই ফোন নম্বরটি ইতিমধ্যে অন্য সদস্যের সাথে যুক্ত! ডুপ্লিকেট অনুমোদিত নয়।');
+            return;
+        }
+        
+        // ক্লিন করে সংরক্ষণ করব (শুধু 10 ডিজিট)
+        const cleanedPhone = cleanIndianPhone(rawPhone);
+        
         const area = document.getElementById('area').value.trim();
         const role = document.getElementById('role').value.trim();
         const cluster = document.getElementById('cluster').value.trim();
         const note = document.getElementById('note').value.trim();
-        const editId = document.getElementById('editId').value;
 
         if (editId === "") {
             const newId = peopleData.length > 0 ? Math.max(...peopleData.map(p => p.id)) + 1 : 1;
-            peopleData.push({ id: newId, name, phone, area, role, cluster, note });
+            peopleData.push({ id: newId, name, phone: cleanedPhone, area, role, cluster, note });
         } else {
             const index = peopleData.findIndex(p => p.id == editId);
             if (index !== -1) {
-                peopleData[index] = { ...peopleData[index], name, phone, area, role, cluster, note };
+                peopleData[index] = { ...peopleData[index], name, phone: cleanedPhone, area, role, cluster, note };
             }
             resetFormToAddMode();
         }
@@ -409,12 +479,13 @@
         populateFilters();
         renderTable();
         resetFormToAddMode();
-        toggleForm(false); // যোগ/আপডেট শেষে ফর্ম লুকান
+        toggleForm(false);
     }
 
     function loadPersonToForm(person) {
         document.getElementById('name').value = person.name;
         document.getElementById('phone').value = person.phone;
+        validatePhoneField(); // হিন্ট আপডেট
         document.getElementById('area').value = person.area || '';
         document.getElementById('role').value = person.role || '';
         document.getElementById('cluster').value = person.cluster || '';
@@ -433,6 +504,7 @@
         document.getElementById('formTitle').innerHTML = '➕ নতুন সদস্য যোগ করুন';
         document.getElementById('submitBtn').innerHTML = '➕ যোগ করুন';
         document.getElementById('cancelEditBtn').style.display = 'none';
+        document.getElementById('phoneHint').innerHTML = '';
     }
 
     function deletePerson(id) {
@@ -446,7 +518,6 @@
         }
     }
 
-    // ইমপোর্ট/এক্সপোর্ট/রিসেট
     function exportToJSON() {
         const dataStr = JSON.stringify(peopleData, null, 2);
         const blob = new Blob([dataStr], {type: "application/json"});
@@ -505,8 +576,8 @@
         e.target.value = '';
     });
     document.getElementById('resetDataBtn').addEventListener('click', resetToDefault);
+    document.getElementById('phone').addEventListener('input', validatePhoneField);
 
-    // শুরু
     loadDataFromStorage();
 </script>
 </body>
