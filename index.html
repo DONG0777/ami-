@@ -2,23 +2,27 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>People Manager - ভারতীয় ফোন ভ্যালিডেশন সহ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>People Manager - মোবাইল রেস্পন্সিভ</title>
     <style>
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1400px;
-            margin: auto;
-            padding: 20px;
+            margin: 0 auto;
+            padding: 12px;
             background: #f4f7fc;
         }
-        h1 { color: #2c3e50; }
+        h1 { 
+            font-size: 1.6rem; 
+            color: #2c3e50; 
+            margin: 0 0 15px 0;
+        }
         .card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
+            padding: 15px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         #formCard { display: none; }
@@ -26,26 +30,27 @@
         .form-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
         .form-group {
             flex: 1;
-            min-width: 150px;
-            position: relative;
+            min-width: 100%; /* মোবাইলে পুরো প্রস্থ */
         }
         label {
             display: block;
             font-weight: bold;
             margin-bottom: 5px;
             color: #2c3e50;
+            font-size: 0.9rem;
         }
         input, select, textarea {
             width: 100%;
-            padding: 8px 10px;
+            padding: 12px 10px;
             border: 1px solid #bdc3c7;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 16px; /* মোবাইলে জুম এভয়েড */
+            background: white;
         }
         .phone-hint {
             font-size: 12px;
@@ -58,14 +63,15 @@
             background-color: #3498db;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 12px 18px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             margin-right: 8px;
-            margin-top: 5px;
+            margin-top: 8px;
+            transition: 0.2s;
         }
-        button:hover { opacity: 0.9; }
+        button:active { opacity: 0.7; }
         .btn-danger { background-color: #e74c3c; }
         .btn-success { background-color: #2ecc71; }
         .btn-warning { background-color: #f39c12; }
@@ -74,14 +80,14 @@
         .btn-new {
             background-color: #2ecc71;
             font-size: 16px;
-            padding: 10px 20px;
+            padding: 12px 20px;
             margin-bottom: 15px;
-            border: none;
-            cursor: pointer;
+            width: 100%;
+            text-align: center;
         }
         .search-box {
             width: 100%;
-            padding: 12px;
+            padding: 12px 15px;
             font-size: 16px;
             margin-bottom: 15px;
             border-radius: 30px;
@@ -94,52 +100,71 @@
             margin-bottom: 20px;
         }
         .filters select {
-            width: auto;
-            min-width: 120px;
+            flex: 1;
+            min-width: 110px;
+            font-size: 14px;
+            padding: 10px;
+        }
+        /* টেবিল র‍্যাপার - হরাইজন্টাল স্ক্রল */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -5px;
+            padding: 0 5px;
         }
         table {
             width: 100%;
+            min-width: 600px; /* ছোট স্ক্রিনে স্ক্রল নিশ্চিত */
             border-collapse: collapse;
             background: white;
             border-radius: 12px;
-            overflow-x: auto;
-            display: block;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px 8px;
+            padding: 12px 8px;
             text-align: left;
             vertical-align: middle;
+            font-size: 14px;
         }
         th {
             background-color: #2c3e50;
             color: white;
             position: sticky;
             top: 0;
+            font-weight: 600;
         }
         .action-buttons {
             position: relative;
             text-align: center;
+            white-space: nowrap;
         }
         .kebab-btn {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 28px;
             cursor: pointer;
-            padding: 0 8px;
+            padding: 0 12px;
             color: #2c3e50;
+            line-height: 1;
         }
         .dropdown-menu {
             position: absolute;
             background: white;
             border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 100;
-            min-width: 140px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 160px;
             right: 0;
             top: 100%;
             display: none;
+        }
+        /* মোবাইলে মেনু বাম দিকে খোলে */
+        @media (max-width: 500px) {
+            .dropdown-menu {
+                right: auto;
+                left: 0;
+            }
         }
         .dropdown-menu button {
             display: block;
@@ -147,11 +172,14 @@
             text-align: left;
             background: none;
             border: none;
-            padding: 8px 12px;
+            padding: 12px 16px;
             margin: 0;
             color: #2c3e50;
-            font-size: 14px;
+            font-size: 16px;
+            border-radius: 0;
         }
+        .dropdown-menu button:first-child { border-radius: 12px 12px 0 0; }
+        .dropdown-menu button:last-child { border-radius: 0 0 12px 12px; }
         .dropdown-menu button:hover {
             background-color: #f0f0f0;
         }
@@ -165,36 +193,53 @@
             margin-bottom: 15px;
             flex-wrap: wrap;
         }
-        @media (max-width: 700px) {
-            .form-row { flex-direction: column; }
-            .filters { flex-direction: column; }
-            th, td { font-size: 12px; }
+        .export-import button, .export-import label {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+        }
+        #resultsCount {
+            font-size: 14px;
+            margin: 10px 0;
+            color: #555;
+        }
+        /* মোবাইলে ফর্ম বাটন পুরো প্রস্থ */
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .card { padding: 12px; }
+            button { width: auto; min-width: 100px; }
+            .btn-new { width: 100%; }
+            .export-import button, .export-import label { width: 100%; }
+            .filters select { width: 100%; }
+            th, td { padding: 8px 6px; font-size: 13px; }
+            .kebab-btn { font-size: 24px; padding: 0 8px; }
         }
     </style>
 </head>
 <body>
-<h1>📋 People Manager (ভারতীয় ফোন ভ্যালিডেশন)</h1>
+<h1>📋 People Manager</h1>
 
 <button id="toggleFormBtn" class="btn-new">➕ নতুন সদস্য যোগ করুন</button>
 
 <div id="formCard" class="card">
-    <h2 id="formTitle">➕ নতুন সদস্য যোগ করুন</h2>
+    <h2 id="formTitle" style="font-size:1.3rem;">➕ নতুন সদস্য যোগ করুন</h2>
     <form id="peopleForm">
         <div class="form-row">
-            <div class="form-group"><label>নাম *</label><input type="text" id="name" required></div>
+            <div class="form-group"><label>নাম *</label><input type="text" id="name" required autocomplete="off"></div>
             <div class="form-group">
                 <label>ফোন * (ভারতীয় মোবাইল)</label>
-                <input type="tel" id="phone" required>
+                <input type="tel" id="phone" required autocomplete="off">
                 <span id="phoneHint" class="phone-hint"></span>
             </div>
-            <div class="form-group"><label>এলাকা</label><input type="text" id="area"></div>
-            <div class="form-group"><label>রোল</label><input type="text" id="role"></div>
-            <div class="form-group"><label>ক্লাস্টার</label><input type="text" id="cluster"></div>
+            <div class="form-group"><label>এলাকা</label><input type="text" id="area" autocomplete="off"></div>
+            <div class="form-group"><label>রোল</label><input type="text" id="role" autocomplete="off"></div>
+            <div class="form-group"><label>ক্লাস্টার</label><input type="text" id="cluster" autocomplete="off"></div>
         </div>
         <div class="form-row">
             <div class="form-group"><label>নোট</label><textarea id="note" rows="2"></textarea></div>
         </div>
-        <div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
             <button type="submit" class="btn-success" id="submitBtn">➕ যোগ করুন</button>
             <button type="button" id="cancelEditBtn" style="display:none;">বাতিল করুন</button>
         </div>
@@ -211,12 +256,12 @@
     </div>
     <div class="export-import">
         <button id="exportBtn" class="btn-warning">📁 JSON এক্সপোর্ট</button>
-        <label for="importFile" class="btn" style="background:#95a5a6; padding:8px 16px; border-radius:6px; cursor:pointer;">📂 JSON ইমপোর্ট</label>
+        <label for="importFile" style="background:#95a5a6; padding:10px 12px; border-radius:8px; cursor:pointer; text-align:center;">📂 JSON ইমপোর্ট</label>
         <input type="file" id="importFile" accept=".json" style="display:none;">
-        <button id="resetDataBtn" class="btn-danger">🔄 ডিফল্ট ডেটা রিসেট</button>
+        <button id="resetDataBtn" class="btn-danger">🔄 ডিফল্ট রিসেট</button>
     </div>
     <div id="resultsCount"></div>
-    <div style="overflow-x: auto;">
+    <div class="table-wrapper">
         <table id="peopleTable">
             <thead>
                 <tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th><th style="width:60px"></th></tr>
@@ -228,7 +273,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 <script>
-    // ---------- ডিফল্ট ডেটা (ভারতীয় নম্বর উদাহরণ) ----------
+    // ---------- ডিফল্ট ডেটা (ভারতীয় নম্বর) ----------
     const DEFAULT_DATA = [
         { id: 1, name: "রাহুল শর্মা", phone: "9876543210", area: "দিল্লি", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" },
         { id: 2, name: "প্রিয়া সিং", phone: "9988776655", area: "মুম্বই", role: "নেত্রী", cluster: "পশ্চিম", note: "নতুন যোগদান" }
@@ -237,23 +282,18 @@
     let peopleData = [];
     let fuseInstance = null;
 
-    // ---------- ফোন ভ্যালিডেশন ফাংশন ----------
+    // ---------- ফোন ভ্যালিডেশন ----------
     function cleanIndianPhone(phone) {
-        // স্পেস, ড্যাশ, বন্ধনী সরান
         let cleaned = phone.replace(/[\s\-\(\)]/g, '');
-        // +91 বা 91 প্রিফিক্স থাকলে সরান
         if (cleaned.startsWith('+91')) cleaned = cleaned.slice(3);
         else if (cleaned.startsWith('91')) cleaned = cleaned.slice(2);
-        // 0 প্রিফিক্স থাকলে সরান
         if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
-        // শুধু ডিজিট রাখুন
         cleaned = cleaned.replace(/\D/g, '');
-        return cleaned; // 10 ডিজিট স্ট্রিং
+        return cleaned;
     }
 
     function isValidIndianPhone(phone) {
         const cleaned = cleanIndianPhone(phone);
-        // 10 ডিজিট, প্রথম ডিজিট 6-9 এর মধ্যে
         return /^[6-9]\d{9}$/.test(cleaned);
     }
 
@@ -261,12 +301,10 @@
         const cleaned = cleanIndianPhone(phone);
         return peopleData.some(p => {
             if (excludeId && p.id == excludeId) return false;
-            const existingCleaned = cleanIndianPhone(p.phone);
-            return existingCleaned === cleaned;
+            return cleanIndianPhone(p.phone) === cleaned;
         });
     }
 
-    // ফোন ইনপুটে রিয়েল টাইম হিন্ট দেখানো
     function validatePhoneField() {
         const phoneInput = document.getElementById('phone');
         const hintSpan = document.getElementById('phoneHint');
@@ -362,7 +400,6 @@
             const row = tbody.insertRow();
             row.insertCell(0).innerText = person.id;
             row.insertCell(1).innerHTML = highlightText(person.name || '', query);
-            // ফোন নম্বর ডিসপ্লে (10 ডিজিটই দেখাবে)
             row.insertCell(2).innerHTML = highlightText(person.phone || '', query);
             row.insertCell(3).innerHTML = highlightText(person.area || '', query);
             row.insertCell(4).innerHTML = highlightText(person.role || '', query);
@@ -435,30 +472,22 @@
         }
     }
 
-    // ফোন ভ্যালিডেশন ও ডুপ্লিকেট চেক সহ সেভ
     function savePerson(event) {
         event.preventDefault();
         const name = document.getElementById('name').value.trim();
         let rawPhone = document.getElementById('phone').value.trim();
         if (!name) { alert('নাম দিন'); return; }
         if (!rawPhone) { alert('ফোন নম্বর দিন'); return; }
-        
-        // ফোন ভ্যালিডেশন
         if (!isValidIndianPhone(rawPhone)) {
             alert('ভারতীয় মোবাইল নম্বর সঠিক নয়। ১০ ডিজিটের 6/7/8/9 দিয়ে শুরু নম্বর দিন।');
             return;
         }
-        
         const editId = document.getElementById('editId').value;
-        // ডুপ্লিকেট চেক
         if (isDuplicatePhone(rawPhone, editId ? parseInt(editId) : null)) {
             alert('এই ফোন নম্বরটি ইতিমধ্যে অন্য সদস্যের সাথে যুক্ত! ডুপ্লিকেট অনুমোদিত নয়।');
             return;
         }
-        
-        // ক্লিন করে সংরক্ষণ করব (শুধু 10 ডিজিট)
         const cleanedPhone = cleanIndianPhone(rawPhone);
-        
         const area = document.getElementById('area').value.trim();
         const role = document.getElementById('role').value.trim();
         const cluster = document.getElementById('cluster').value.trim();
@@ -485,7 +514,7 @@
     function loadPersonToForm(person) {
         document.getElementById('name').value = person.name;
         document.getElementById('phone').value = person.phone;
-        validatePhoneField(); // হিন্ট আপডেট
+        validatePhoneField();
         document.getElementById('area').value = person.area || '';
         document.getElementById('role').value = person.role || '';
         document.getElementById('cluster').value = person.cluster || '';
