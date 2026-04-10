@@ -3,371 +3,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>People Manager Pro</title>
+    <title>প্রো পিপল ম্যানেজার</title>
+    <!-- Fuse.js for fuzzy search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+    <!-- Chart.js for analytics (optional pro feature) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        /* container */
+        .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 12px;
-            background: linear-gradient(145deg, #eef2f7 0%, #d9e0e8 100%);
-            min-height: 100vh;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
         }
         h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #1e2a3a, #0f172a);
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e293b, #2d3a4b);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin: 0 0 15px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+            letter-spacing: -0.3px;
         }
+        .badge {
+            background: #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* cards */
         .card {
             background: rgba(255,255,255,0.96);
             backdrop-filter: blur(2px);
-            border-radius: 28px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.02);
+            border-radius: 32px;
+            padding: 1.5rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.02);
             transition: all 0.2s;
         }
-        #formCard { display: none; }
-        #formCard.show { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .form-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-        .form-group { flex: 1; min-width: 100%; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; color: #1e293b; font-size: 0.85rem; letter-spacing: 0.3px; }
+
+        .form-card {
+            display: none;
+        }
+        .form-card.show {
+            display: block;
+            animation: slideDown 0.25s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* form grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #334155;
+            letter-spacing: 0.3px;
+        }
         input, select, textarea {
-            width: 100%;
-            padding: 14px 12px;
+            padding: 12px 14px;
             border: 1.5px solid #e2e8f0;
-            border-radius: 20px;
-            font-size: 16px;
-            background: #ffffff;
+            border-radius: 24px;
+            font-size: 0.95rem;
             transition: 0.2s;
+            background: white;
             font-family: inherit;
         }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
-        .phone-hint { font-size: 11px; margin-top: 5px; display: block; font-weight: 500; }
-        .phone-hint.valid { color: #10b981; }
-        .phone-hint.invalid { color: #ef4444; }
-        button {
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        .phone-hint {
+            font-size: 0.7rem;
+            margin-top: 4px;
+        }
+        .valid { color: #10b981; }
+        .invalid { color: #ef4444; }
+
+        /* buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .btn-primary {
             background: linear-gradient(105deg, #3b82f6, #2563eb);
             color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            margin-right: 8px;
-            margin-top: 8px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px -2px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(37,99,235,0.2);
+        }
+        .btn-success {
+            background: linear-gradient(105deg, #10b981, #059669);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(105deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(105deg, #f59e0b, #d97706);
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-new {
+            width: 100%;
+            background: linear-gradient(105deg, #1e293b, #0f172a);
+            color: white;
+            padding: 14px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
         }
         button:active { transform: scale(0.97); }
-        .btn-danger { background: linear-gradient(105deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(105deg, #10b981, #059669); }
-        .btn-warning { background: linear-gradient(105deg, #f59e0b, #d97706); }
-        .btn-new {
-            background: linear-gradient(105deg, #0f172a, #1e293b);
-            font-size: 16px;
-            padding: 14px 20px;
-            width: 100%;
-            text-align: center;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
+
+        /* search + filters */
         .search-box {
             width: 100%;
             padding: 14px 20px;
-            font-size: 16px;
             border-radius: 60px;
             border: 1.5px solid #e2e8f0;
+            font-size: 1rem;
             background: white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            margin-bottom: 1rem;
         }
-        .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-        .filters select { flex: 1; min-width: 110px; font-size: 14px; border-radius: 40px; background: white; }
-        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 24px; background: white; }
-        table { width: 100%; min-width: 600px; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #eef2f6; padding: 14px 10px; text-align: left; font-size: 14px; }
-        th { background-color: #f8fafc; color: #0f172a; font-weight: 700; position: sticky; top: 0; }
-        .action-buttons { position: relative; text-align: center; white-space: nowrap; }
-        .kebab-btn { background: none; border: none; font-size: 28px; cursor: pointer; padding: 0 12px; color: #475569; transition: 0.1s; }
-        .dropdown-menu {
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .filters select {
+            flex: 1;
+            min-width: 120px;
+            background: white;
+        }
+
+        /* table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 24px;
+            background: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eef2f6;
+            font-size: 0.85rem;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+            position: sticky;
+            top: 0;
+        }
+        .highlight {
+            background-color: #fef08a;
+            border-radius: 8px;
+            padding: 0 2px;
+        }
+
+        /* kebab menu */
+        .action-cell {
+            position: relative;
+            text-align: center;
+        }
+        .kebab {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 0 12px;
+            color: #475569;
+            line-height: 1;
+        }
+        .dropdown {
             position: absolute;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
-            z-index: 1000;
-            min-width: 160px;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+            z-index: 100;
+            min-width: 150px;
             right: 0;
             top: 100%;
             display: none;
             overflow: hidden;
             border: 1px solid #eef2f6;
         }
-        @media (max-width: 500px) { .dropdown-menu { right: auto; left: 0; } }
-        .dropdown-menu button {
+        .dropdown button {
             display: block;
             width: 100%;
             text-align: left;
             background: none;
             border: none;
-            padding: 14px 18px;
-            margin: 0;
+            padding: 12px 16px;
+            font-size: 0.85rem;
             color: #1e293b;
-            font-size: 14px;
-            border-radius: 0;
-            box-shadow: none;
         }
-        .dropdown-menu button:hover { background-color: #f1f5f9; }
-        .highlight { background-color: #fef08a; border-radius: 6px; padding: 0 2px; }
-        .export-import { display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
-        .export-import button, .export-import label { flex: 1; text-align: center; padding: 12px; font-size: 14px; border-radius: 40px; background: #f1f5f9; color: #1e293b; box-shadow: none; }
-        #resultsCount { font-size: 14px; margin: 12px 0; color: #475569; font-weight: 500; }
-        .password-protect-badge { background: #fef9c3; color: #854d0e; padding: 6px 12px; border-radius: 40px; font-size: 12px; display: inline-block; margin-bottom: 12px; }
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .card { padding: 16px; }
+        .dropdown button:hover { background: #f1f5f9; }
+        @media (max-width: 550px) {
+            .dropdown { right: auto; left: 0; }
+        }
+
+        /* analytics row */
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 28px;
+            padding: 1rem 1.5rem;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2563eb;
+        }
+
+        /* responsive */
+        @media (max-width: 680px) {
+            body { padding: 12px; }
+            .card { padding: 1rem; }
             th, td { padding: 10px 6px; }
-            .kebab-btn { font-size: 24px; }
+        }
+
+        /* password badge */
+        .lock-badge {
+            background: #fef9c3;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
     </style>
 </head>
 <body>
-<h1>📋 People Manager Pro</h1>
-<div class="password-protect-badge">🔐 পাসওয়ার্ড সুরক্ষিত (ডিলিট করতে পাসওয়ার্ড লাগবে)</div>
+<div class="container">
+    <div class="header">
+        <h1>👥 প্রো পিপল ম্যানেজার</h1>
+        <div class="lock-badge">🔐 ডিলিট/রিসেটে পাসওয়ার্ড লাগে</div>
+    </div>
 
-<button id="toggleFormBtn" class="btn-new">➕ নতুন সদস্য যোগ করুন</button>
+    <!-- New member button -->
+    <button id="toggleFormBtn" class="btn btn-new">➕ নতুন সদস্য যোগ করুন</button>
 
-<div id="formCard" class="card">
-    <h2 id="formTitle" style="font-size:1.4rem;">➕ নতুন সদস্য যোগ করুন</h2>
-    <form id="peopleForm">
-        <div class="form-row">
-            <div class="form-group"><label>নাম *</label><input type="text" id="name" required autocomplete="off"></div>
-            <div class="form-group">
-                <label>ফোন * (ভারতীয় মোবাইল)</label>
-                <input type="tel" id="phone" required autocomplete="off">
-                <span id="phoneHint" class="phone-hint"></span>
+    <!-- Form card (hidden initially) -->
+    <div id="formCard" class="card form-card">
+        <h2 id="formTitle" style="margin-bottom: 1rem;">➕ নতুন সদস্য যোগ করুন</h2>
+        <form id="peopleForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>নাম *</label>
+                    <input type="text" id="name" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>ফোন * (ভারতীয়)</label>
+                    <input type="tel" id="phone" required autocomplete="off">
+                    <span id="phoneHint" class="phone-hint"></span>
+                </div>
+                <div class="form-group">
+                    <label>এলাকা</label>
+                    <input type="text" id="area" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>রোল</label>
+                    <input type="text" id="role" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>ক্লাস্টার</label>
+                    <input type="text" id="cluster" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>নোট</label>
+                    <textarea id="note" rows="2"></textarea>
+                </div>
             </div>
-            <div class="form-group"><label>এলাকা</label><input type="text" id="area" autocomplete="off"></div>
-            <div class="form-group"><label>রোল</label><input type="text" id="role" autocomplete="off"></div>
-            <div class="form-group"><label>ক্লাস্টার</label><input type="text" id="cluster" autocomplete="off"></div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-success" id="submitBtn">➕ যোগ করুন</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-outline" style="display:none;">বাতিল করুন</button>
+            </div>
+            <input type="hidden" id="editId" value="">
+        </form>
+    </div>
+
+    <!-- Main card -->
+    <div class="card">
+        <input type="text" id="searchBox" class="search-box" placeholder="🔍 যেকোনো কিছু লিখুন (নাম, ফোন, এলাকা, রোল, নোট...)">
+
+        <div class="filters">
+            <select id="filterRole"><option value="">সব রোল</option></select>
+            <select id="filterArea"><option value="">সব এলাকা</option></select>
+            <select id="filterCluster"><option value="">সব ক্লাস্টার</option></select>
         </div>
-        <div class="form-row">
-            <div class="form-group"><label>নোট</label><textarea id="note" rows="2"></textarea></div>
+
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-number" id="totalCount">0</div><div>মোট সদস্য</div></div>
+            <div class="stat-card"><div class="stat-number" id="filteredCount">0</div><div>ফলাফল (বর্তমান)</div></div>
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-            <button type="submit" class="btn-success" id="submitBtn">➕ যোগ করুন</button>
-            <button type="button" id="cancelEditBtn" style="display:none;">বাতিল করুন</button>
+
+        <div class="btn-group" style="justify-content: flex-end;">
+            <button id="exportBtn" class="btn btn-warning">📁 JSON এক্সপোর্ট</button>
+            <label for="importFile" class="btn btn-outline" style="cursor:pointer;">📂 JSON ইমপোর্ট</label>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+            <button id="resetDataBtn" class="btn btn-danger">🔄 ডিফল্ট রিসেট</button>
+            <button id="backupReminderBtn" class="btn btn-primary">☁️ গুগল ড্রাইভ ব্যাকআপ</button>
         </div>
-        <input type="hidden" id="editId" value="">
-    </form>
+
+        <div class="table-wrapper">
+            <table id="peopleTable">
+                <thead>
+                    <tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th><th style="width:60px"></th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-    <input type="text" id="searchBox" class="search-box" placeholder="🔍 যেকোনো কিছু লিখুন (নাম, ফোন, এলাকা, নোট...)" autocomplete="off">
-    <div class="filters">
-        <select id="filterRole"><option value="">সব রোল</option></select>
-        <select id="filterArea"><option value="">সব এলাকা</option></select>
-        <select id="filterCluster"><option value="">সব ক্লাস্টার</option></select>
-    </div>
-    <div class="export-import">
-        <button id="exportBtn" class="btn-warning">📁 JSON এক্সপোর্ট</button>
-        <label for="importFile" style="background:#f1f5f9; padding:12px; border-radius:40px; cursor:pointer;">📂 JSON ইমপোর্ট</label>
-        <input type="file" id="importFile" accept=".json" style="display:none;">
-        <button id="resetDataBtn" class="btn-danger">🔄 ডিফল্ট রিসেট</button>
-        <button id="backupDriveBtn" class="btn-success" style="background:#4285f4;">☁️ গুগল ড্রাইভে ব্যাকআপ</button>
-    </div>
-    <div id="resultsCount"></div>
-    <div class="table-wrapper">
-        <table id="peopleTable">
-            <thead><tr><th>ID</th><th>নাম</th><th>ফোন</th><th>এলাকা</th><th>রোল</th><th>ক্লাস্টার</th><th>নোট</th><th style="width:60px"></th></tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
 <script>
-    // ---------- কনফিগারেশন ----------
-    const ADMIN_PASSWORD = "admin123";   // ← আপনার পছন্দের পাসওয়ার্ড দিন (পরিবর্তন করতে পারেন)
-    const STORAGE_KEY = 'peopleManagerData';
-    const LAST_BACKUP_KEY = 'lastGoogleDriveBackup';
+    // ------------------------------
+    //  CONFIGURATION
+    // ------------------------------
+    const ADMIN_PASSWORD = "admin123";   // ← আপনার পছন্দের পাসওয়ার্ড দিন
+    const STORAGE_KEY = "peopleManagerData";
     const BACKUP_INTERVAL_DAYS = 7;
+    const LAST_BACKUP_KEY = "lastDriveBackup";
 
     let peopleData = [];
     let fuseInstance = null;
 
-    // ---------- পাসওয়ার্ড চেক ফাংশন ----------
-    function verifyPassword(actionName = "ডিলিট") {
-        let pwd = prompt(`🔐 ${actionName} করতে পাসওয়ার্ড দিন:`);
-        return pwd === ADMIN_PASSWORD;
-    }
-
-    // ---------- ডিলিট ফাংশন (পাসওয়ার্ড সুরক্ষিত) ----------
-    function deletePerson(id) {
-        if (!verifyPassword("ডিলিট")) {
-            alert("ভুল পাসওয়ার্ড! ডিলিট বাতিল করা হয়েছে।");
-            return;
-        }
-        if (confirm('আপনি কি এই সদস্যকে ডিলিট করতে চান?')) {
-            peopleData = peopleData.filter(p => p.id !== id);
-            saveToStorage();
-            rebuildFuse();
-            populateFilters();
-            renderTable();
-            if (document.getElementById('editId').value == id) resetFormToAddMode();
-            alert("✅ ডিলিট সম্পন্ন হয়েছে।");
-        }
-    }
-
-    // রিসেট ডাটা (ডিফল্ট রিসেট) - সেটিও পাসওয়ার্ড সুরক্ষিত
-    const originalReset = window.resetToDefault;
-    window.resetToDefault = function() {
-        if (!verifyPassword("ডেটা রিসেট")) {
-            alert("ভুল পাসওয়ার্ড! রিসেট বাতিল।");
-            return;
-        }
-        if (confirm('সমস্ত ডেটা ডিফল্টে রিসেট হবে। আপনার করা পরিবর্তন হারাবে। নিশ্চিত?')) {
-            loadDefaultData();
-            rebuildFuse(); populateFilters(); renderTable();
-            resetFormToAddMode(); toggleForm(false);
-            alert("ডেটা ডিফল্টে রিসেট করা হয়েছে।");
-        }
-    };
-
-    // ---------- গুগল ড্রাইভ ব্যাকআপ (OAuth 2.0 সহ) ----------
-    // নোট: গুগল ড্রাইভ API ব্যবহার করতে গেলে https://console.cloud.google.com/ থেকে একটি OAuth Client ID তৈরি করতে হবে।
-    // নিচে একটি সহজ স্ক্রিপ্ট দেওয়া হল যা ইউজারকে লগইন করে এবং একটি JSON ফাইল আপলোড করে।
-    // আপনি চাইলে এই অংশটি বাদ দিয়ে শুধু রিমাইন্ডার দেখাতে পারেন। আমরা এখানে সম্পূর্ণ ফিচার দিচ্ছি।
-    
-    let gapiInited = false;
-    let tokenClient;
-    const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';  // ← আপনাকে নিজের client ID বসাতে হবে
-    const API_KEY = 'YOUR_API_KEY';  // ← আপনাকে নিজের API key বসাতে হবে
-    
-    // গুগল API লোড
-    function loadGoogleAPI() {
-        if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
-            console.warn("গুগল ড্রাইভ ব্যাকআপের জন্য client ID সেট করা হয়নি। ব্যাকআপ বাটন কাজ করবে না।");
-            document.getElementById('backupDriveBtn').style.opacity = '0.5';
-            document.getElementById('backupDriveBtn').disabled = true;
-            return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => {
-            gapi.load('client', initGapi);
-        };
-        document.head.appendChild(script);
-    }
-    
-    function initGapi() {
-        gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] }).then(() => {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: 'https://www.googleapis.com/auth/drive.file',
-                callback: (tokenResponse) => {
-                    if (tokenResponse.error) throw tokenResponse;
-                    uploadToDrive();
-                },
-            });
-            gapiInited = true;
-        }).catch(err => console.error(err));
-    }
-    
-    function backupToDrive() {
-        if (!gapiInited || CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
-            alert("গুগল ড্রাইভ ব্যাকআপ কনফিগার করা হয়নি। দয়া করে index.html-এ CLIENT_ID ও API_KEY সেট করুন।");
-            return;
-        }
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-    }
-    
-    function uploadToDrive() {
-        const fileContent = JSON.stringify(peopleData, null, 2);
-        const blob = new Blob([fileContent], { type: 'application/json' });
-        const metadata = {
-            name: `people_backup_${new Date().toISOString().slice(0,10)}.json`,
-            parents: ['root'],
-            mimeType: 'application/json'
-        };
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', blob);
-        fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${gapi.client.getToken().access_token}` },
-            body: form
-        }).then(res => res.json()).then(data => {
-            if (data.id) {
-                localStorage.setItem(LAST_BACKUP_KEY, Date.now().toString());
-                alert("✅ ব্যাকআপ গুগল ড্রাইভে সেভ হয়েছে!");
-            } else throw new Error(data.error);
-        }).catch(err => { console.error(err); alert("ব্যাকআপ ব্যর্থ: " + err.message); });
-    }
-    
-    // স্বয়ংক্রিয় ৭ দিনে একবার রিমাইন্ডার (ব্যাকআপ বাটন চাপার জন্য)
-    function checkBackupReminder() {
-        const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
-        if (!lastBackup) return;
-        const daysSince = (Date.now() - parseInt(lastBackup)) / (1000*3600*24);
-        if (daysSince >= BACKUP_INTERVAL_DAYS) {
-            if (confirm(`গত ${BACKUP_INTERVAL_DAYS} দিনে কোনো ব্যাকআপ নেওয়া হয়নি। এখনই গুগল ড্রাইভে ব্যাকআপ নেবেন?`)) {
-                backupToDrive();
-            }
-        }
-    }
-    
-    // বাকি ফাংশনগুলো আগের মতো (লোড, সেভ, ফিল্টার, রেন্ডার ইত্যাদি)
-    // সংক্ষেপে এখানে পুনরায় লিখছি (সবগুলি আগের কোড থেকে নেওয়া)
-    
+    // ------------------------------
+    //  UTILITIES
+    // ------------------------------
     function cleanIndianPhone(phone) {
-        let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+        let cleaned = String(phone).replace(/[\s\-\(\)]/g, '');
         if (cleaned.startsWith('+91')) cleaned = cleaned.slice(3);
         else if (cleaned.startsWith('91')) cleaned = cleaned.slice(2);
         if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
         cleaned = cleaned.replace(/\D/g, '');
         return cleaned;
     }
-    function isValidIndianPhone(phone) { return /^[6-9]\d{9}$/.test(cleanIndianPhone(phone)); }
+    function isValidIndianPhone(phone) {
+        const cleaned = cleanIndianPhone(phone);
+        return /^[6-9]\d{9}$/.test(cleaned);
+    }
     function isDuplicatePhone(phone, excludeId = null) {
         const cleaned = cleanIndianPhone(phone);
-        return peopleData.some(p => { if (excludeId && p.id == excludeId) return false; return cleanIndianPhone(p.phone) === cleaned; });
+        return peopleData.some(p => {
+            if (excludeId && p.id == excludeId) return false;
+            return cleanIndianPhone(p.phone) === cleaned;
+        });
     }
     function validatePhoneField() {
-        const phoneInput = document.getElementById('phone');
-        const hintSpan = document.getElementById('phoneHint');
-        const rawPhone = phoneInput.value;
-        if (!rawPhone) { hintSpan.innerHTML = ''; return false; }
-        const isValid = isValidIndianPhone(rawPhone);
-        hintSpan.innerHTML = isValid ? '✓ বৈধ ভারতীয় মোবাইল' : '✗ ১০ ডিজিটের মোবাইল দিন';
-        hintSpan.className = isValid ? 'phone-hint valid' : 'phone-hint invalid';
-        return isValid;
+        const input = document.getElementById('phone');
+        const hint = document.getElementById('phoneHint');
+        const raw = input.value;
+        if (!raw) { hint.innerHTML = ''; return false; }
+        const valid = isValidIndianPhone(raw);
+        hint.innerHTML = valid ? '✓ বৈধ ভারতীয় মোবাইল' : '✗ ১০ ডিজিট, 6/7/8/9 দিয়ে শুরু';
+        hint.className = valid ? 'phone-hint valid' : 'phone-hint invalid';
+        return valid;
     }
-    function saveToStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(peopleData)); }
-    function rebuildFuse() { fuseInstance = new Fuse(peopleData, { keys: ['name','phone','area','role','cluster','note'], threshold: 0.3, includeMatches: true }); }
-    function populateFilters() {
-        const roles = [...new Set(peopleData.map(p => p.role).filter(r => r && r.trim()))];
-        const areas = [...new Set(peopleData.map(p => p.area).filter(a => a && a.trim()))];
-        const clusters = [...new Set(peopleData.map(p => p.cluster).filter(c => c && c.trim()))];
-        const roleSel = document.getElementById('filterRole'), areaSel = document.getElementById('filterArea'), clusterSel = document.getElementById('filterCluster');
-        roleSel.innerHTML = '<option value="">সব রোল</option>';
-        areaSel.innerHTML = '<option value="">সব এলাকা</option>';
-        clusterSel.innerHTML = '<option value="">সব ক্লাস্টার</option>';
-        roles.forEach(r => { let opt = document.createElement('option'); opt.value = r; opt.text = r; roleSel.appendChild(opt); });
-        areas.forEach(a => { let opt = document.createElement('option'); opt.value = a; opt.text = a; areaSel.appendChild(opt); });
-        clusters.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.text = c; clusterSel.appendChild(opt); });
+
+    // Storage
+    function saveToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(peopleData));
+        updateStats();
     }
+    function rebuildFuse() {
+        fuseInstance = new Fuse(peopleData, {
+            keys: ['name', 'phone', 'area', 'role', 'cluster', 'note'],
+            threshold: 0.3,
+            includeMatches: true
+        });
+    }
+
+    // Filtering & rendering
     function getFilteredData() {
         let filtered = peopleData;
         const query = document.getElementById('searchBox').value.trim();
-        if (query) filtered = fuseInstance.search(query).map(r => r.item);
+        if (query) {
+            const results = fuseInstance.search(query);
+            filtered = results.map(r => r.item);
+        }
         const role = document.getElementById('filterRole').value;
         const area = document.getElementById('filterArea').value;
         const cluster = document.getElementById('filterCluster').value;
@@ -376,16 +456,26 @@
         if (cluster) filtered = filtered.filter(p => p.cluster === cluster);
         return filtered;
     }
-    function closeAllDropdowns() { document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none'); }
+
     function highlightText(text, query) {
         if (!query || !text) return text || '';
         const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
         return text.replace(regex, `<span class="highlight">$1</span>`);
     }
+
+    function updateStats() {
+        document.getElementById('totalCount').innerText = peopleData.length;
+        const filteredCount = getFilteredData().length;
+        document.getElementById('filteredCount').innerText = filteredCount;
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+    }
+
     function renderTable() {
         const filtered = getFilteredData();
         const tbody = document.querySelector('#peopleTable tbody');
-        document.getElementById('resultsCount').innerHTML = `${filtered.length} টি ফলাফল পাওয়া গেছে`;
         tbody.innerHTML = '';
         const query = document.getElementById('searchBox').value.trim();
         filtered.forEach(person => {
@@ -398,45 +488,95 @@
             row.insertCell(5).innerHTML = highlightText(person.cluster || '', query);
             row.insertCell(6).innerHTML = highlightText(person.note || '', query);
             const actionCell = row.insertCell(7);
-            actionCell.className = 'action-buttons';
-            const kebab = document.createElement('button'); kebab.textContent = '⋮'; kebab.className = 'kebab-btn';
-            const dropdown = document.createElement('div'); dropdown.className = 'dropdown-menu';
-            const callOpt = document.createElement('button'); callOpt.textContent = '📞 কল'; callOpt.onclick = (e) => { e.stopPropagation(); window.location.href = `tel:+91${cleanIndianPhone(person.phone)}`; closeAllDropdowns(); };
-            const waOpt = document.createElement('button'); waOpt.textContent = '💬 হোয়াটসঅ্যাপ'; waOpt.onclick = (e) => { e.stopPropagation(); window.open(`https://wa.me/91${cleanIndianPhone(person.phone)}`,'_blank'); closeAllDropdowns(); };
-            const editOpt = document.createElement('button'); editOpt.textContent = '✏️ এডিট'; editOpt.onclick = (e) => { e.stopPropagation(); loadPersonToForm(person); closeAllDropdowns(); };
-            const delOpt = document.createElement('button'); delOpt.textContent = '🗑️ ডিলিট'; delOpt.onclick = (e) => { e.stopPropagation(); deletePerson(person.id); closeAllDropdowns(); };
-            dropdown.append(callOpt, waOpt, editOpt, delOpt);
+            actionCell.className = 'action-cell';
+            const kebab = document.createElement('button');
+            kebab.textContent = '⋮';
+            kebab.className = 'kebab';
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown';
+            const callBtn = document.createElement('button'); callBtn.textContent = '📞 কল'; callBtn.onclick = (e) => { e.stopPropagation(); window.location.href = `tel:+91${cleanIndianPhone(person.phone)}`; closeAllDropdowns(); };
+            const waBtn = document.createElement('button'); waBtn.textContent = '💬 হোয়াটসঅ্যাপ'; waBtn.onclick = (e) => { e.stopPropagation(); window.open(`https://wa.me/91${cleanIndianPhone(person.phone)}`, '_blank'); closeAllDropdowns(); };
+            const editBtn = document.createElement('button'); editBtn.textContent = '✏️ এডিট'; editBtn.onclick = (e) => { e.stopPropagation(); loadPersonToForm(person); closeAllDropdowns(); };
+            const delBtn = document.createElement('button'); delBtn.textContent = '🗑️ ডিলিট'; delBtn.onclick = (e) => { e.stopPropagation(); deletePersonWithPassword(person.id); closeAllDropdowns(); };
+            dropdown.append(callBtn, waBtn, editBtn, delBtn);
             actionCell.append(kebab, dropdown);
             kebab.onclick = (e) => { e.stopPropagation(); closeAllDropdowns(); dropdown.style.display = 'block'; };
         });
+        updateStats();
     }
-    document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-menu') && !e.target.closest('.kebab-btn')) closeAllDropdowns(); });
-    function toggleForm(show) { const fc = document.getElementById('formCard'); if (show === true) fc.classList.add('show'); else if (show === false) fc.classList.remove('show'); else fc.classList.toggle('show'); }
-    function savePerson(e) {
-        e.preventDefault();
-        const name = document.getElementById('name').value.trim();
-        let rawPhone = document.getElementById('phone').value.trim();
-        if (!name) return alert('নাম দিন');
-        if (!rawPhone) return alert('ফোন দিন');
-        if (!isValidIndianPhone(rawPhone)) return alert('ভারতীয় মোবাইল নম্বর দিন');
-        const editId = document.getElementById('editId').value;
-        if (isDuplicatePhone(rawPhone, editId ? parseInt(editId) : null)) return alert('ডুপ্লিকেট ফোন নম্বর!');
-        const cleanedPhone = cleanIndianPhone(rawPhone);
-        const area = document.getElementById('area').value.trim();
-        const role = document.getElementById('role').value.trim();
-        const cluster = document.getElementById('cluster').value.trim();
-        const note = document.getElementById('note').value.trim();
-        if (!editId) {
-            const newId = peopleData.length ? Math.max(...peopleData.map(p => p.id)) + 1 : 1;
-            peopleData.push({ id: newId, name, phone: cleanedPhone, area, role, cluster, note });
-        } else {
-            const idx = peopleData.findIndex(p => p.id == editId);
-            if (idx !== -1) peopleData[idx] = { ...peopleData[idx], name, phone: cleanedPhone, area, role, cluster, note };
-            resetFormToAddMode();
+
+    // Password protected delete & reset
+    function verifyPassword(action) {
+        const pwd = prompt(`🔐 ${action} করতে পাসওয়ার্ড দিন:`);
+        return pwd === ADMIN_PASSWORD;
+    }
+
+    function deletePersonWithPassword(id) {
+        if (!verifyPassword("ডিলিট")) {
+            alert("ভুল পাসওয়ার্ড! ডিলিট বাতিল।");
+            return;
         }
-        saveToStorage(); rebuildFuse(); populateFilters(); renderTable();
-        resetFormToAddMode(); toggleForm(false);
+        if (confirm('নিশ্চিত ডিলিট?')) {
+            peopleData = peopleData.filter(p => p.id !== id);
+            saveToStorage();
+            rebuildFuse();
+            populateFilters();
+            renderTable();
+            if (document.getElementById('editId').value == id) resetFormToAddMode();
+            alert("✅ ডিলিট হয়েছে।");
+        }
     }
+
+    function resetDataWithPassword() {
+        if (!verifyPassword("ডেটা রিসেট")) {
+            alert("ভুল পাসওয়ার্ড! রিসেট বাতিল।");
+            return;
+        }
+        if (confirm('সব ডেটা ডিফল্টে রিসেট হবে। নিশ্চিত?')) {
+            loadDefaultData();
+            saveToStorage();
+            rebuildFuse();
+            populateFilters();
+            renderTable();
+            resetFormToAddMode();
+            toggleForm(false);
+            alert("ডেটা ডিফল্টে রিসেট করা হয়েছে।");
+        }
+    }
+
+    // Populate filters from data
+    function populateFilters() {
+        const roles = [...new Set(peopleData.map(p => p.role).filter(r => r && r.trim()))];
+        const areas = [...new Set(peopleData.map(p => p.area).filter(a => a && a.trim()))];
+        const clusters = [...new Set(peopleData.map(p => p.cluster).filter(c => c && c.trim()))];
+        const roleSel = document.getElementById('filterRole');
+        const areaSel = document.getElementById('filterArea');
+        const clusterSel = document.getElementById('filterCluster');
+        roleSel.innerHTML = '<option value="">সব রোল</option>';
+        areaSel.innerHTML = '<option value="">সব এলাকা</option>';
+        clusterSel.innerHTML = '<option value="">সব ক্লাস্টার</option>';
+        roles.forEach(r => { let opt = document.createElement('option'); opt.value = r; opt.text = r; roleSel.appendChild(opt); });
+        areas.forEach(a => { let opt = document.createElement('option'); opt.value = a; opt.text = a; areaSel.appendChild(opt); });
+        clusters.forEach(c => { let opt = document.createElement('option'); opt.value = c; opt.text = c; clusterSel.appendChild(opt); });
+    }
+
+    // Form actions
+    function toggleForm(show) {
+        const fc = document.getElementById('formCard');
+        if (show === true) fc.classList.add('show');
+        else if (show === false) fc.classList.remove('show');
+        else fc.classList.toggle('show');
+    }
+
+    function resetFormToAddMode() {
+        document.getElementById('peopleForm').reset();
+        document.getElementById('editId').value = '';
+        document.getElementById('formTitle').innerHTML = '➕ নতুন সদস্য যোগ করুন';
+        document.getElementById('submitBtn').innerHTML = '➕ যোগ করুন';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.getElementById('phoneHint').innerHTML = '';
+    }
+
     function loadPersonToForm(p) {
         document.getElementById('name').value = p.name;
         document.getElementById('phone').value = p.phone;
@@ -452,57 +592,126 @@
         toggleForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    function resetFormToAddMode() {
-        document.getElementById('peopleForm').reset();
-        document.getElementById('editId').value = '';
-        document.getElementById('formTitle').innerHTML = '➕ নতুন সদস্য যোগ করুন';
-        document.getElementById('submitBtn').innerHTML = '➕ যোগ করুন';
-        document.getElementById('cancelEditBtn').style.display = 'none';
-        document.getElementById('phoneHint').innerHTML = '';
+
+    function savePerson(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value.trim();
+        let rawPhone = document.getElementById('phone').value.trim();
+        if (!name) return alert('নাম দিন');
+        if (!rawPhone) return alert('ফোন দিন');
+        if (!isValidIndianPhone(rawPhone)) return alert('ভারতীয় মোবাইল নম্বর দিন (10 ডিজিট, 6/7/8/9 দিয়ে শুরু)');
+        const editId = document.getElementById('editId').value;
+        if (isDuplicatePhone(rawPhone, editId ? parseInt(editId) : null)) return alert('এই ফোন নম্বরটি আগে থেকেই আছে!');
+        const cleanedPhone = cleanIndianPhone(rawPhone);
+        const area = document.getElementById('area').value.trim();
+        const role = document.getElementById('role').value.trim();
+        const cluster = document.getElementById('cluster').value.trim();
+        const note = document.getElementById('note').value.trim();
+        if (!editId) {
+            const newId = peopleData.length ? Math.max(...peopleData.map(p => p.id)) + 1 : 1;
+            peopleData.push({ id: newId, name, phone: cleanedPhone, area, role, cluster, note });
+        } else {
+            const idx = peopleData.findIndex(p => p.id == editId);
+            if (idx !== -1) peopleData[idx] = { ...peopleData[idx], name, phone: cleanedPhone, area, role, cluster, note };
+            resetFormToAddMode();
+        }
+        saveToStorage();
+        rebuildFuse();
+        populateFilters();
+        renderTable();
+        resetFormToAddMode();
+        toggleForm(false);
     }
+
+    // Import / Export
     function exportToJSON() {
         const dataStr = JSON.stringify(peopleData, null, 2);
         const blob = new Blob([dataStr], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'people_backup.json'; a.click(); URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `people_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
+
     function importFromJSON(file) {
         const reader = new FileReader();
-        reader.onload = e => {
+        reader.onload = ev => {
             try {
-                const imported = JSON.parse(e.target.result);
-                if (Array.isArray(imported)) { peopleData = imported; peopleData.forEach((p,i) => { if (!p.id) p.id = i+1; }); saveToStorage(); rebuildFuse(); populateFilters(); renderTable(); alert('ইমপোর্ট সফল'); }
-                else throw new Error();
-            } catch(err) { alert('ভুল JSON ফাইল'); }
+                const imported = JSON.parse(ev.target.result);
+                if (Array.isArray(imported)) {
+                    peopleData = imported;
+                    peopleData.forEach((p, idx) => { if (!p.id) p.id = idx+1; });
+                    saveToStorage();
+                    rebuildFuse();
+                    populateFilters();
+                    renderTable();
+                    alert('✅ ইমপোর্ট সফল!');
+                } else throw new Error();
+            } catch(e) { alert('ভুল JSON ফাইল'); }
         };
         reader.readAsText(file);
     }
+
+    // Google Drive backup reminder (no actual OAuth, just reminder + manual backup instruction)
+    function backupReminder() {
+        const last = localStorage.getItem(LAST_BACKUP_KEY);
+        const now = Date.now();
+        if (last && (now - parseInt(last)) / (1000*3600*24) < BACKUP_INTERVAL_DAYS) {
+            alert(`গত ${BACKUP_INTERVAL_DAYS} দিনের মধ্যে ব্যাকআপ নেওয়া আছে। আবার নিতে চাইলে OK দিন।`);
+        }
+        // manual backup: export to JSON and show instruction to upload to drive manually
+        const dataStr = JSON.stringify(peopleData, null, 2);
+        const blob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `drive_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        localStorage.setItem(LAST_BACKUP_KEY, now.toString());
+        alert("📁 ব্যাকআপ JSON ডাউনলোড হয়েছে। আপনি নিজে গুগল ড্রাইভে আপলোড করে রাখুন। ৭ দিন পর আবার রিমাইন্ডার দেখাবে।");
+    }
+
+    // Default & folder load
     function loadDefaultData() {
-        peopleData = [{ id: 1, name: "রাহুল শর্মা", phone: "9876543210", area: "দিল্লি", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" }];
+        peopleData = [
+            { id: 1, name: "রাহুল শর্মা", phone: "9876543210", area: "দিল্লি", role: "সদস্য", cluster: "উত্তর", note: "সক্রিয়" },
+            { id: 2, name: "প্রিয়া সিং", phone: "9988776655", area: "মুম্বই", role: "নেত্রী", cluster: "পশ্চিম", note: "নতুন যোগদান" }
+        ];
         saveToStorage();
     }
+
     async function loadFromDataFolder() {
         try {
             const res = await fetch('data/people.json');
             if (!res.ok) throw new Error();
             const data = await res.json();
-            if (Array.isArray(data)) { peopleData = data; saveToStorage(); return true; }
+            if (Array.isArray(data)) {
+                peopleData = data;
+                saveToStorage();
+                return true;
+            }
             return false;
         } catch(e) { return false; }
     }
+
     async function initData() {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) peopleData = JSON.parse(stored);
-        else {
-            const folderLoaded = await loadFromDataFolder();
-            if (!folderLoaded) loadDefaultData();
+        if (stored) {
+            peopleData = JSON.parse(stored);
+        } else {
+            const loaded = await loadFromDataFolder();
+            if (!loaded) loadDefaultData();
         }
-        peopleData.sort((a,b) => (a.id||0)-(b.id||0));
-        rebuildFuse(); populateFilters(); renderTable();
-        checkBackupReminder();
-        loadGoogleAPI();  // গুগল ড্রাইভ API লোড
+        peopleData.sort((a,b) => (a.id||0) - (b.id||0));
+        rebuildFuse();
+        populateFilters();
+        renderTable();
     }
-    // ইভেন্ট লিসেনার
+
+    // Event listeners
     document.getElementById('toggleFormBtn').addEventListener('click', () => toggleForm());
     document.getElementById('peopleForm').addEventListener('submit', savePerson);
     document.getElementById('cancelEditBtn').addEventListener('click', () => { resetFormToAddMode(); toggleForm(false); });
@@ -512,9 +721,10 @@
     document.getElementById('filterCluster').addEventListener('change', () => renderTable());
     document.getElementById('exportBtn').addEventListener('click', exportToJSON);
     document.getElementById('importFile').addEventListener('change', (e) => { if (e.target.files.length) importFromJSON(e.target.files[0]); e.target.value = ''; });
-    document.getElementById('resetDataBtn').addEventListener('click', window.resetToDefault);
-    document.getElementById('backupDriveBtn').addEventListener('click', () => backupToDrive());
+    document.getElementById('resetDataBtn').addEventListener('click', resetDataWithPassword);
+    document.getElementById('backupReminderBtn').addEventListener('click', backupReminder);
     document.getElementById('phone').addEventListener('input', validatePhoneField);
+
     initData();
 </script>
 </body>
